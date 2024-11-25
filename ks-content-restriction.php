@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: Content Restriction
+ * Plugin Name: Kaushik Sannidhi's Content Restriction Plugin
  * Description: Restrict access to blog content for non-logged-in users or users without specified roles.
  * Version: 1.1
  * Author: Kaushik Sannidhi
