@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Kaushik Sannidhi's Content Restriction Plugin
- * Description: Restrict access to blog content for non-logged-in users or users without specified roles.
- * Version: 1.1
+ * Description: Restrict access to blog content for non-logged-in users or users without specified roles. Displays an optional excerpt before the restriction message.
+ * Version: 1.2
  * Author: Kaushik Sannidhi
  */
 
@@ -41,7 +41,7 @@ function cr_save_meta_box($post_id) {
 }
 add_action('save_post', 'cr_save_meta_box');
 
-// Add settings page for custom restricted message
+// Add settings page for custom restricted message and excerpt option
 function cr_add_admin_menu() {
     add_menu_page(
         'Content Restriction',
@@ -57,11 +57,14 @@ add_action('admin_menu', 'cr_add_admin_menu');
 
 // Settings page callback
 function cr_settings_page() {
-    if (isset($_POST['cr_restricted_message'])) {
+    if (isset($_POST['cr_restricted_message']) || isset($_POST['cr_show_excerpt'])) {
         update_option('cr_restricted_message', wp_kses_post($_POST['cr_restricted_message']));
-        echo '<div class="updated"><p>Restricted message updated.</p></div>';
+        update_option('cr_show_excerpt', isset($_POST['cr_show_excerpt']) ? 1 : 0);
+        echo '<div class="updated"><p>Settings updated.</p></div>';
     }
+
     $restricted_message = get_option('cr_restricted_message', cr_get_default_restricted_message());
+    $show_excerpt = get_option('cr_show_excerpt', 0);
     ?>
     <div class="wrap">
         <h1>Content Restriction Settings</h1>
@@ -69,6 +72,13 @@ function cr_settings_page() {
             <h2>Custom Restricted Message</h2>
             <p>Enter the HTML you want to display to unauthorized users:</p>
             <textarea name="cr_restricted_message" rows="10" style="width: 100%;"><?php echo esc_textarea($restricted_message); ?></textarea>
+
+            <h2>Display Excerpt</h2>
+            <p>
+                <label>
+                    <input type="checkbox" name="cr_show_excerpt" value="1" <?php checked($show_excerpt, 1); ?>> Show a small excerpt before the restricted message
+                </label>
+            </p>
             <p><input type="submit" class="button-primary" value="Save Changes"></p>
         </form>
     </div>
@@ -84,23 +94,32 @@ function cr_get_default_restricted_message() {
     </div>';
 }
 
-// Restrict content based on roles
+// Restrict content based on roles and show optional excerpt
 function cr_restrict_content($content) {
     if (is_single() && in_the_loop() && is_main_query()) {
         $post_id = get_the_ID();
         $allowed_roles = get_post_meta($post_id, '_cr_allowed_roles', true);
 
         if (!is_user_logged_in()) {
-            return get_option('cr_restricted_message', cr_get_default_restricted_message());
+            return cr_get_restricted_content($content);
         }
 
         $user = wp_get_current_user();
         $user_roles = $user->roles;
 
         if (!array_intersect($allowed_roles, $user_roles)) {
-            return get_option('cr_restricted_message', cr_get_default_restricted_message());
+            return cr_get_restricted_content($content);
         }
     }
     return $content;
 }
 add_filter('the_content', 'cr_restrict_content');
+
+// Generate restricted content with optional excerpt
+function cr_get_restricted_content($content) {
+    $show_excerpt = get_option('cr_show_excerpt', 0);
+    $excerpt = $show_excerpt ? '<p>' . wp_trim_words(strip_shortcodes($content), 30, '...') . '</p>' : '';
+    $restricted_message = get_option('cr_restricted_message', cr_get_default_restricted_message());
+
+    return $excerpt . $restricted_message;
+}
