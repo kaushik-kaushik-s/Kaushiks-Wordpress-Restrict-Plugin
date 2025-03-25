@@ -6,7 +6,6 @@
  * Author: Kaushik Sannidhi
  */
 
-// Add meta box for role selection
 function cr_add_meta_box() {
     add_meta_box(
         'cr_meta_box',
@@ -41,7 +40,6 @@ function cr_save_meta_box($post_id) {
 }
 add_action('save_post', 'cr_save_meta_box');
 
-// Add settings page for custom restricted message and excerpt option
 function cr_add_admin_menu() {
     add_menu_page(
         'Content Restriction',
@@ -55,7 +53,6 @@ function cr_add_admin_menu() {
 }
 add_action('admin_menu', 'cr_add_admin_menu');
 
-// Settings page callback
 function cr_settings_page() {
     if (isset($_POST['cr_restricted_message']) || isset($_POST['cr_show_excerpt'])) {
         update_option('cr_restricted_message', wp_kses_post($_POST['cr_restricted_message']));
@@ -85,7 +82,6 @@ function cr_settings_page() {
     <?php
 }
 
-// Default restricted message
 function cr_get_default_restricted_message() {
     return '
     <div style="background-color: rgb(22, 122, 135, 0.1); padding: 2rem; border-radius: 12px; text-align: center; font-family: Arial, sans-serif; max-width: 600px; margin: 2rem auto; box-shadow: 0 4px 6px rgba(22, 122, 135, 0.1);">
@@ -94,7 +90,6 @@ function cr_get_default_restricted_message() {
     </div>';
 }
 
-// Restrict content based on roles and show optional excerpt
 function cr_restrict_content($content) {
     if (is_single() && in_the_loop() && is_main_query()) {
         $post_id = get_the_ID();
@@ -115,7 +110,6 @@ function cr_restrict_content($content) {
 }
 add_filter('the_content', 'cr_restrict_content');
 
-// Generate restricted content with optional excerpt
 function cr_get_restricted_content($content) {
     $show_excerpt = get_option('cr_show_excerpt', 0);
     $excerpt = $show_excerpt ? '<p>' . wp_trim_words(strip_shortcodes($content), 30, '...') . '</p>' : '';
